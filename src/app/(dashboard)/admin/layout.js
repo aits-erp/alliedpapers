@@ -81,6 +81,14 @@ export default function AdminSidebar({ children }) {
 
         <nav className="mt-6 px-2 pb-6 space-y-3 ">
           {/* Masters ----------------------------------------------------- */}
+             <div className="p-4 ">
+   <Item 
+  href="/admin"
+  icon={<HiHome size={24}  />}
+  label="Dashboard"
+  close={closeSidebar}
+/>
+    </div>
           <Section title="Masters" icon={<HiUsers />} isOpen={openMenu === 'master'} onToggle={() => toggleMenu('master')}>
             <Item href="/admin/createCustomers" icon={<HiUserGroup />} label="Create Customer" close={closeSidebar} />
             <Item href="/admin/Countries" icon={<HiGlobeAlt />} label="Countries" close={closeSidebar} />
