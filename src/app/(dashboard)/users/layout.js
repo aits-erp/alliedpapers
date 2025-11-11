@@ -89,6 +89,8 @@ export default function Sidebar({ children }) {
     stock: has('inventory manager'),
     pay: has('accounts manager'),
     prod: has('production head'),
+    users: has('admin'),
+    admin: has('admin'),
   };
   if (has('admin')) Object.keys(v).forEach((k) => (v[k] = true));
 
@@ -386,6 +388,29 @@ export default function Sidebar({ children }) {
               )}
             </div>
           )}
+
+          {/* users */}
+          {v.users && (
+            <div>
+              <MenuBtn
+                isOpen={open.menu === 'users'}
+                onToggle={() => toggleMenu('users')}
+                icon={<HiUsers />}
+                label="Users"
+              />
+              {open.menu === 'users' && (
+                <div className="ml-6 mt-2 space-y-1">
+                  <Item
+                    href={P('/users')}
+                    icon={<HiUserGroup />}
+                    label="Create User"
+                    close={closeDrawer}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
 
           {/* CRM */}
           {v.crm && (
