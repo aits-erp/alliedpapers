@@ -18,30 +18,48 @@ const VALID_ROLES = [
 ];
 
 /* ─── helper: verify JWT and ensure company type ─── */
-function verifyCompany(req) {
+function verifyAuth(req) {
   const auth = req.headers.get('authorization') || '';
   const [, token] = auth.split(' ');
   if (!token) throw new Error('Unauthorized');
+
   const d = jwt.verify(token, SECRET);
-  if (d.type !== 'company') throw new Error('Forbidden');
-  return d; // { id, email, type: 'company', … }
+  return d; // { id, email, type: 'company' or 'admin' }
 }
 
 /* ───────── GET  /api/company/users ───────── */
 export async function GET(req) {
   try {
-    const company = verifyCompany(req);
+    const user = verifyAuth(req);
+
+    const isAdmin = user.roles?.includes("Admin");  
+    const isCompany = user.type === "company";
+
     await dbConnect();
-    const users = await CompanyUser.find({ companyId: company.id })
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .lean();
+
+    let users;
+
+    if (isAdmin) {
+      // ✅ Admin sees ALL users
+      users = await CompanyUser.find().select("-password").lean();
+    } else if (isCompany) {
+      // ✅ Company sees only their users
+      users = await CompanyUser.find({ companyId: user.companyId })
+        .select("-password")
+        .lean();
+    } else {
+      throw new Error("Forbidden");
+    }
+
     return NextResponse.json(users);
+
   } catch (e) {
     const status = /Unauthorized|Forbidden/.test(e.message) ? 401 : 500;
     return NextResponse.json({ message: e.message }, { status });
   }
 }
+
+
 
 /* ───────── POST  /api/company/users ───────── */
 export async function POST(req) {

@@ -85,12 +85,12 @@
 //                     <td className="px-4 py-2 border border-gray-300">{customer.customerName}</td>
 //                     <td className="px-4 py-2 border border-gray-300">{customer.emailId}</td>
 //                     <td className="px-4 py-2 border border-gray-300 flex gap-2">
-//                       <button
+//                       <Bulktton
 //                         className="text-blue-500 hover:text-blue-700"
 //                         onClick={() => handleEdit(customer)}
 //                       >
 //                         <FaEdit />
-//                       </button>
+//                       </Bulktton>
 //                       <button
 //                         className="text-red-500 hover:text-red-700"
 //                         onClick={() => handleDelete(customer._id)}
