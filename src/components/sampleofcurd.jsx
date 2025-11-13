@@ -225,41 +225,45 @@ export default function CustomerManagement() {
 
 
 
-const handleFileUpload = async (event) => {
+const handleBulkUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
-    complete: async (results) => {
-      const rows = results.data;
-      console.log("Parsed rows:", rows);
 
+    complete: async ({ data: rows }) => {
       try {
-        const res = await fetch("/api/customers/customer-template", {
+        const response = await fetch("/api/customers/customer-template", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ customers: rows }),
         });
 
-        const data = await res.json();
-        console.log("Response data:", data);
+        const result = await response.json();
 
-        if (res.ok) {
-          const totalRows = rows.length;
-          const inserted = data.insertedCount || 0;
-          const skipped = totalRows - inserted;
-
-          alert(
-            `📊 Total rows: ${totalRows}\n✅ Inserted: ${inserted}\n⚠️ Skipped (duplicates): ${skipped}`
-          );
-        } else {
-          alert(`❌ Error: ${data.message}`);
+        if (!response.ok) {
+          alert(`❌ Error: ${result.message}`);
+          return;
         }
+
+        // Pretty result summary
+        alert(
+          `📊 Customer Bulk Upload Summary\n\n` +
+          `📦 Total Received: ${result.totalReceived}\n` +
+          `🟢 Inserted: ${result.insertedCount}\n` +
+          `🟡 Updated: ${result.updatedCount}\n` +
+          `⚠️ Skipped: ${result.skippedCount}\n` +
+          `❌ Errors: ${result.errorCount}\n`
+        );
+
+        // Refresh frontend
+        fetchCustomers();
+
       } catch (error) {
-        console.error(error);
-        alert("Upload failed");
+        console.error("Upload error:", error);
+        alert("❌ Upload failed.");
       }
     },
   });
@@ -722,7 +726,7 @@ const renderBulkUploadView = () => (
     <input
       type="file"
       accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-      onChange={handleFileUpload}
+      onChange={handleBulkUpload}
       className="mb-4 block"
     />
 
