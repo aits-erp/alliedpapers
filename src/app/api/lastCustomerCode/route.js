@@ -13,7 +13,7 @@ export async function GET() {
       .limit(1);
 
     // Default to "CUST-0000" if no customers exist
-    const lastCustomerCode = lastCustomer?.customerCode || "CUST-0000";
+    const lastCustomerCode = lastCustomer?.customerCode || "C0000";
 
     return NextResponse.json({ lastCustomerCode });
   } catch (error) {

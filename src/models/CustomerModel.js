@@ -22,7 +22,7 @@ const customerSchema = new mongoose.Schema({
     type: String,
 
     trim: true,
-    uppercase: true
+    
   },
   customerName: {
     type: String,

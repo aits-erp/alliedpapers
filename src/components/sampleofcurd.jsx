@@ -53,17 +53,26 @@ export default function CustomerManagement() {
     }
   };
 
-  const generateCustomerCode = async () => {
-    try {
-      const res = await fetch("/api/lastCustomerCode");
-      const { lastCustomerCode } = await res.json();
-      const num = parseInt(lastCustomerCode.split("-")[1], 10) + 1;
-      setCustomerDetails((prev) => ({
-        ...prev,
-        customerCode: `CUST-${num.toString().padStart(4, "0")}`,
-      }));
-    } catch {}
-  };
+const generateCustomerCode = async () => {
+  try {
+    const res = await fetch("/api/lastCustomerCode");
+    const { lastCustomerCode } = await res.json(); // example: C0001 or C-0001
+
+    // Extract digits only (0001)
+    const digits = lastCustomerCode.replace(/\D/g, "");  
+    const nextNumber = (parseInt(digits, 10) || 0) + 1;
+
+    const newCode = `C${nextNumber.toString().padStart(4, "0")}`;
+
+    setCustomerDetails((prev) => ({
+      ...prev,
+      customerCode: newCode,
+    }));
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
