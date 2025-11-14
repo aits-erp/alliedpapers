@@ -683,7 +683,7 @@ const handleBulkUpload = async (event) => {
               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div>
+          {/* <div>
             <AccountSearch
               value={customerDetails.glAccount}
               onSelect={(selected) => {
@@ -694,7 +694,7 @@ const handleBulkUpload = async (event) => {
                 }));
               }}
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="flex justify-end space-x-3 mt-6">
