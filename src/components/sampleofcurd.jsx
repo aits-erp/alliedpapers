@@ -125,7 +125,7 @@ const generateCustomerCode = async () => {
       { field: "customerName", label: "Customer Name" },
       { field: "customerGroup", label: "Customer Group" },
       { field: "customerType", label: "Customer Type" },
-      { field: "glAccount", label: "GL Account" },
+     
       // { field: "emailId", label: "Email ID" },
       { field: "gstCategory", label: "GST Category" },
       { field: "pan", label: "PAN" },
