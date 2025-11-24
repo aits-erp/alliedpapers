@@ -15,6 +15,9 @@ export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+ 
+  const [zones, setZones] = useState([]);
+
   const [customerDetails, setCustomerDetails] = useState({
     customerCode: "",
     customerName: "",
@@ -35,7 +38,32 @@ export default function CustomerManagement() {
     contactPersonName: "",
     commissionRate: "",
     glAccount: null,
+    salesEmployee: "",  
+    zone: "",
+    creditLimit: 0,
   });
+  const [salesEmployees, setSalesEmployees] = useState([]);
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  axios
+    .get("/api/company/users", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      console.log("API Response:", res.data);
+      setSalesEmployees(res.data || []);
+    })
+    .catch((err) => {
+      console.error("Error fetching employees:", err);
+    });
+}, []);
+
+
+
 
   useEffect(() => {
     fetchCustomers();
@@ -205,6 +233,9 @@ const generateCustomerCode = async () => {
       pan: "",
       contactPersonName: "",
       commissionRate: "",
+      zone: "",
+      creditLimit: 0,
+      salesEmployee: "",
       glAccount: null,
     });
     setView("list");
@@ -683,6 +714,69 @@ const handleBulkUpload = async (event) => {
               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Commission Rate (%)
+            </label>
+            <input
+              name="commissionRate"
+              type="number"
+              value={customerDetails.commissionRate}
+              onChange={handleChange}
+              placeholder="Commission Rate"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>  
+     <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Sales Employee
+  </label>
+
+  <select
+    name="salesEmployee"
+    value={customerDetails.salesEmployee}
+    onChange={handleChange}
+    className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">Select Employee</option>
+
+    {Array.isArray(salesEmployees) &&
+      salesEmployees.map((emp) => (
+        <option key={emp._id} value={emp._id}>
+          {emp.name}
+        </option>
+      ))}
+  </select>
+</div>
+
+          <div> 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Zone
+            </label>
+            <input
+              name="zone"
+              value={customerDetails.zone}  
+              onChange={handleChange}
+              placeholder="Zone"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />  
+          </div>
+          <div> 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Credit Limit
+            </label>
+            <input
+              name="creditLimit"
+              type="number"
+              value={customerDetails.creditLimit}
+              onChange={handleChange}
+              placeholder="Credit Limit"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />  
+          </div>
+        </div>
+          <div>
+          
           {/* <div>
             <AccountSearch
               value={customerDetails.glAccount}

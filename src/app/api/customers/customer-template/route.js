@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Customer from "@/models/CustomerModel";
+import CompanyUser from "@/models/CompanyUser"; // <-- IMPORTANT
 
 export async function POST(req) {
   try {
@@ -22,7 +23,31 @@ export async function POST(req) {
 
     for (const row of customers) {
       try {
-        // Normalized mapped customer object
+        /* ------------------------------------------------
+            🔥 Convert Sales Employee Name → ObjectId
+        ------------------------------------------------ */
+        let salesEmployeeId = null;
+
+        if (row.salesEmployee && typeof row.salesEmployee === "string") {
+          const employee = await CompanyUser.findOne({
+            name: row.salesEmployee.trim(),
+          });
+
+          if (employee) {
+            salesEmployeeId = employee._id;
+          } else {
+            // ❗ If not found, skip this row
+            skipped.push({
+              code: row.customerCode,
+              reason: `Sales Employee '${row.salesEmployee}' not found`,
+            });
+            continue;
+          }
+        }
+
+        /* ------------------------------------------------
+            🔥 Normalized mapped customer object
+        ------------------------------------------------ */
         const cust = {
           customerCode: row.customerCode?.trim(),
           customerName: row.customerName?.trim(),
@@ -37,7 +62,7 @@ export async function POST(req) {
           contactPersonName: row.contactPersonName,
           commissionRate: row.commissionRate,
           glAccount: row.glAccount || null,
-          salesEmployee: row.salesEmployee,
+          salesEmployee: salesEmployeeId,   // ⬅️ Fixed
           zone: row.zone,
 
           billingAddresses: [{
@@ -59,7 +84,9 @@ export async function POST(req) {
           }]
         };
 
-        // Minimal validation
+        /* ------------------------------------------------
+            🔥 Minimal validation
+        ------------------------------------------------ */
         if (!cust.customerCode || !cust.customerName) {
           skipped.push({
             code: row.customerCode,
@@ -68,7 +95,9 @@ export async function POST(req) {
           continue;
         }
 
-        // Check existing by customerCode
+        /* ------------------------------------------------
+            🔥 Check existing by customerCode
+        ------------------------------------------------ */
         const existing = await Customer.findOne({
           customerCode: cust.customerCode,
         });
@@ -111,136 +140,6 @@ export async function POST(req) {
     );
   }
 }
-
-
-
-
-// // /api/customers/customer-template/route.js
-// import { NextResponse } from "next/server";
-// import connectDB from "@/lib/db";
-// import Customer from "@/models/CustomerModel";
-
-
-
-
-
-// export async function POST(req) {
-//   try {
-//     await connectDB();
-
-//     const body = await req.json();
-//     const customers = body.customers || [];
-
-//     if (!Array.isArray(customers) || customers.length === 0) {
-//       return NextResponse.json(
-//         { message: "No customer data received" },
-//         { status: 400 }
-//       );
-//     }
-
-//     let inserted = [];
-//     let updated = [];
-//     let skipped = [];
-//     let errors = [];
-
-//     for (const rawCust of customers) {
-//       try {
-//         // Map CSV fields → Schema
-//         const cust = {
-//           customerCode: rawCust.customerCode?.trim(),
-//           customerName: rawCust.customerName?.trim(),
-//           customerGroup: rawCust.customerGroup,
-//           customerType: rawCust.customerType,
-//           emailId: rawCust.emailId?.trim(),
-//           fromLead: rawCust.fromLead,
-//           mobileNumber: rawCust.mobileNumber
-//             ? rawCust.mobileNumber.replace(/\D/g, "")
-//             : undefined,
-//           fromOpportunity: rawCust.fromOpportunity,
-//           billingAddresses: [
-//             {
-//               address1: rawCust["billingAddress.address1"] || "",
-//               address2: rawCust["billingAddress.address2"] || "",
-//               city: rawCust["billingAddress.city"] || "",
-//               state: rawCust["billingAddress.state"] || "",
-//               zip: rawCust["billingAddress.zip"] || "",
-//               country: rawCust["billingAddress.country"] || "",
-//             },
-//           ],
-//           shippingAddresses: [
-//             {
-//               address1: rawCust["shippingAddress.address1"] || "",
-//               address2: rawCust["shippingAddress.address2"] || "",
-//               city: rawCust["shippingAddress.city"] || "",
-//               state: rawCust["shippingAddress.state"] || "",
-//               zip: rawCust["shippingAddress.zip"] || "",
-//               country: rawCust["shippingAddress.country"] || "",
-//             },
-//           ],
-//           paymentTerms: rawCust.paymentTerms,
-//           gstNumber: rawCust["GST Number"]?.trim(),
-//           gstCategory: rawCust.gstCategory,
-//           pan: rawCust.pan ? rawCust.pan.trim().toUpperCase() : undefined,
-//           contactPersonName: rawCust.contactPersonName,
-//           commissionRate: rawCust.commissionRate,
-//           glAccount: rawCust.glAccount,
-//           salesEmployee: rawCust.salesEmployee,
-//           zone: rawCust.zone,
-//         };
-
-//         // Basic validation
-//         if (!cust.customerCode || !cust.customerName) {
-//           skipped.push({
-//             customerCode: cust.customerCode,
-//             reason: "Missing customerCode or customerName",
-//           });
-//           continue;
-//         }
-
-//         // Check if already exists by customerCode
-//         const existing = await Customer.findOne({
-//           customerCode: cust.customerCode,
-//         });
-
-//         if (existing) {
-//           await Customer.updateOne(
-//             { customerCode: cust.customerCode },
-//             { $set: cust }
-//           );
-//           updated.push(cust.customerCode);
-//         } else {
-//           await Customer.create(cust);
-//           inserted.push(cust.customerCode);
-//         }
-//       } catch (err) {
-//         errors.push({
-//           customerCode: rawCust.customerCode,
-//           error: err.message,
-//         });
-//       }
-//     }
-
-//     return NextResponse.json({
-//       message: "Customers processed",
-//       totalReceived: customers.length,
-//       insertedCount: inserted.length,
-//       updatedCount: updated.length,
-//       skippedCount: skipped.length,
-//       errorCount: errors.length,
-//       inserted,
-//       updated,
-//       skipped,
-//       errors,
-//     });
-//   } catch (error) {
-//     console.error("Error inserting customers:", error);
-//     return NextResponse.json(
-//       { message: "Error processing customers", error: error.message },
-//       { status: 500 }
-//     );
-//   }
-// }
-
 
 
 
