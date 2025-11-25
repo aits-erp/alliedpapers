@@ -139,6 +139,15 @@ export default function AdminSidebar({ children }) {
                   <Item href="/admin/sales-invoice-view" icon={<HiOutlineCreditCard />} label="Invoice View" close={closeSidebar} />
                   <Item href="/admin/credit-memo-veiw" icon={<HiReceiptTax />} label="Credit Memo View" close={closeSidebar} />
                   <Item href="/admin/sales-report" icon={<HiChartSquareBar />} label="Report" close={closeSidebar} />
+                  <Item href="/admin/sales-report/avg-product-rate" icon={<HiChartSquareBar />} label="avg-product-rate" close={closeSidebar} />
+                  <Item href="/admin/sales-report/avg-product-zone" icon={<HiChartSquareBar />} label="avg-product-zone" close={closeSidebar} />
+                  <Item href="/admin/sales-report/orders-summary" icon={<HiChartSquareBar />} label="orders-summary" close={closeSidebar} />
+                  <Item href="/admin/sales-report/pending-dispatch" icon={<HiChartSquareBar />} label="pending-dispatch" close={closeSidebar} />
+                  {/* <Item href="/admin/sales-report/sales-return-report" icon={<HiChartSquareBar />} label="sales-return-report" close={closeSidebar} /> */}
+                  <Item href="/admin/sales-report/orders-summary" icon={<HiChartSquareBar />} label="sales-summary" close={closeSidebar} />
+                  
+                  
+
                 </Submenu>
 
                 {/* TV Purchase */}
