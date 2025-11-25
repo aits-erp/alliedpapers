@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import SalesOrder from "@/models/SalesOrder";
+import Customer from "@/models/CustomerModel";
 import mongoose from "mongoose";
 
 export async function GET(req) {
