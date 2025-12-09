@@ -92,7 +92,7 @@ const customerSchema = new mongoose.Schema({
   //   ref: "BankHead",
   //   // required: [true, "GL BankHead is required"]
   // },
-  salesEmployee: { type: mongoose.Schema.Types.ObjectId, ref: "companyUser"}, // from "SALES PERON NAME"
+  salesEmployee: { type: mongoose.Schema.Types.ObjectId, ref: "CompanyUser"}, // from "SALES PERON NAME"
   zone: { type: String },          // from "REGION"
   creditLimit: { type: Number, default: 0 },
   

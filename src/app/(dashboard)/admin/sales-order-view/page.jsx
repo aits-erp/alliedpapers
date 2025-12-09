@@ -295,7 +295,7 @@ function Table({ orders, filters, setFilters, onDelete, onCopy, onEmail }) {
             <th className="px-4 py-3">Customer</th>
             <th className="px-4 py-3">Date</th>
             <th className="px-4 py-3">Sales Stages</th>
-            <th className="px-4 py-3">Status</th>
+            {/* <th className="px-4 py-3">Status</th> */}
             <th className="px-4 py-3">Total</th>
             <th className="px-4 py-3">Attachments</th>
             <th className="px-4 py-3">Actions</th>
@@ -332,7 +332,7 @@ function Table({ orders, filters, setFilters, onDelete, onCopy, onEmail }) {
                 {new Date(o.postingDate || o.orderDate).toLocaleDateString("en-GB")}
               </td>
               <td className="px-4 py-3">{o.statusStages}</td>
-              <td className="px-4 py-3">{o.status}</td>
+              {/* <td className="px-4 py-3">{o.status}</td> */}
               <td className="px-4 py-3">₹{o.grandTotal}</td>
               <td className="px-4 py-3">
                 {Array.isArray(o.attachments) && o.attachments.length > 0 ? (

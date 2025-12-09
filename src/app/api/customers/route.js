@@ -89,15 +89,39 @@
 
 
 
+// src/app/api/customers/route.js
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db.js";
+
+// IMPORTANT: import CompanyUser FIRST so model gets registered
+import CompanyUser from "@/models/CompanyUser";
 import Customer from "@/models/CustomerModel";
 
+import mongoose from "mongoose";
+
 export async function GET() {
-  await dbConnect();
-  const customers = await Customer.find({})
-  return NextResponse.json(customers);
+  try {
+    await dbConnect();
+
+    // DEBUG: show registered models (temporary - remove in production)
+    console.log("Registered mongoose models:", mongoose.modelNames());
+
+    // Now run the query/populate
+    const customers = await Customer.find({})
+      .populate({
+        path: "salesEmployee",
+        select: "name email phone roles",
+      })
+      .lean();
+
+    return NextResponse.json(customers);
+  } catch (error) {
+    console.error("GET /api/customers error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
+
+
 export async function POST(req) {
   await dbConnect();
   try {
@@ -106,7 +130,9 @@ export async function POST(req) {
     console.log("Received customer data:", body);
     const customer = new Customer(body);
     await customer.save();
-    const populated = await Customer.findById(customer._id).populate("glAccount");
+    const populated = await Customer.findById(customer._id)
+    .populate("salesEmployee ")
+    .populate("glAccount");
     return NextResponse.json(populated, { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });

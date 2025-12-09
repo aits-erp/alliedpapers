@@ -372,6 +372,7 @@ const handleBulkUpload = async (event) => {
                 "Email",
                 "Mobile NO.",
                 "Sales Person",
+                "Zone",
                 "GST NO.",
                 "Actions",
               ].map((h) => (
@@ -391,7 +392,8 @@ const handleBulkUpload = async (event) => {
                 <td className="px-4 py-2">{c.customerName}</td>
                 <td className="px-4 py-2">{c.emailId}</td>
                 <td className="px-4 py-2">{c.mobileNumber}</td>
-                <td className="px-4 py-2">{c.salesEmployee}</td>
+                <td className="px-4 py-2">{c.salesEmployee?.name}</td>
+                <td className="px-4 py-2">{c.zone}</td>
                 <td className="px-4 py-2">
                   {c.gstNumber || "N/A"}
                 </td>

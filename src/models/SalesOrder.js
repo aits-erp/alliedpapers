@@ -88,6 +88,9 @@ const SalesOrderSchema = new mongoose.Schema(
     salesEmployee: { type: String },
     remarks: { type: String },
     freight: { type: Number, default: 0 },
+    insuranceCharges: { type: Number, default: 0 },
+
+otherCharges: { type: Number, default: 0 },
     rounding: { type: Number, default: 0 },
     totalBeforeDiscount: { type: Number, default: 0 },
     totalDownPayment: { type: Number, default: 0 },

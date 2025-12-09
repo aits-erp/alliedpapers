@@ -18,6 +18,7 @@ import CustomerAddressSelector from "@/components/CustomerAddressSelector";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+
 // ------------------ Constants --------------------
 const emptyAddress = {
   address1: "",
@@ -75,6 +76,8 @@ const initialOrderState = {
   ],
   remarks: "",
   freight: 0,
+  insuranceCharges: 0,
+  otherCharges: 0,
   rounding: 0,
   totalDownPayment: 0,
   appliedAmounts: 0,
@@ -95,6 +98,7 @@ const computeItemValues = (item) => {
   const price = parseFloat(item.unitPrice) || 0;
   const disc = parseFloat(item.discount) || 0;
   const fr = parseFloat(item.freight) || 0;
+
   const pad = round(price *(1 - disc /100));
   const total = round(qty * pad + fr);
 
@@ -247,7 +251,8 @@ function SalesOrderForm() {
   //   }, 0);
 
 
-  useEffect(() => {
+// ---------- Totals calculation useEffect (include insurance/other deps) ----------
+useEffect(() => {
   const items = formData.items || [];
   const totalBefore = items.reduce((s, i) => {
     const up = parseFloat(i.unitPrice) || 0;
@@ -259,31 +264,41 @@ function SalesOrderForm() {
     return s + (lineTotal - discountAmt);
   }, 0);
 
-    const gstTotal = items.reduce((s, i) => s + (parseFloat(i.gstAmount) || 0), 0);
-    const igstTotal = items.reduce((s, i) => s + (parseFloat(i.igstAmount) || 0), 0);
+  const gstTotal = items.reduce((s, i) => s + (parseFloat(i.gstAmount) || 0), 0);
+  const igstTotal = items.reduce((s, i) => s + (parseFloat(i.igstAmount) || 0), 0);
 
-    const freight = parseFloat(formData.freight) || 0;
+  const freight = parseFloat(formData.freight) || 0;
+  const insuranceCharges = parseFloat(formData.insuranceCharges) || 0;
+  const otherCharges = parseFloat(formData.otherCharges) || 0;
 
-    const unroundedTotal = totalBefore + gstTotal + igstTotal + freight;
-    const roundedTotal = Math.round(unroundedTotal);
-    const rounding = +(roundedTotal - unroundedTotal).toFixed(2);
-    const grandTotal = roundedTotal;
+  const unroundedTotal = totalBefore + gstTotal + igstTotal + freight + insuranceCharges + otherCharges;
+  const roundedTotal = Math.round(unroundedTotal);
+  const rounding = +(roundedTotal - unroundedTotal).toFixed(2);
+  const grandTotal = roundedTotal;
 
-    const dp = parseFloat(formData.totalDownPayment) || 0;
-    const ap = parseFloat(formData.appliedAmounts) || 0;
-    const openBalance = grandTotal - (dp + ap);
+  const dp = parseFloat(formData.totalDownPayment) || 0;
+  const ap = parseFloat(formData.appliedAmounts) || 0;
+  const openBalance = grandTotal - (dp + ap);
 
-    setFormData((p) => ({
-      ...p,
-      totalBeforeDiscount: round(totalBefore),
-      gstTotal: round(gstTotal),
-      igstTotal: round(igstTotal),
-      grandTotal: round(grandTotal),
-      rounding, // derived
-      openBalance: round(openBalance),
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(formData.items), formData.freight, formData.totalDownPayment, formData.appliedAmounts]);
+  setFormData((p) => ({
+    ...p,
+    totalBeforeDiscount: round(totalBefore),
+    gstTotal: round(gstTotal),
+    igstTotal: round(igstTotal),
+    grandTotal: round(grandTotal),
+    rounding, // derived
+    openBalance: round(openBalance),
+  }));
+  // ensure totals update whenever items OR any top-level numeric fields change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+  JSON.stringify(formData.items),
+  formData.freight,
+  formData.insuranceCharges,
+  formData.otherCharges,
+  formData.totalDownPayment,
+  formData.appliedAmounts,
+]);
 
   // ---- Helpers ----
   function normalizeAddress(a) {
@@ -310,10 +325,30 @@ function SalesOrderForm() {
     }));
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
+ // ---------- improved handleChange (parse numeric fields) ----------
+const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  // treat these fields as numeric
+  const numericTopLevel = [
+    "freight",
+    "insuranceCharges",
+    "otherCharges",
+    "rounding",
+    "totalDownPayment",
+    "appliedAmounts",
+    "gstTotal",
+    "igstTotal",
+    "grandTotal",
+    "totalBeforeDiscount",
+  ];
+
+  const newVal = numericTopLevel.includes(name) ? (parseFloat(value) || 0) : value;
+
+  setFormData((p) => ({ ...p, [name]: newVal }));
+};
+
+
 
   // nested address updates
   const updateAddressField = (kind, field, value) => {
@@ -335,6 +370,9 @@ function SalesOrderForm() {
         "unitPrice",
         "discount",
         "freight",
+        "insuranceCharges",
+        "otherCharges",
+        "rounding",
         "gstRate",
         "igstRate",
         "cgstRate",
@@ -800,6 +838,8 @@ function SalesOrderForm() {
           ["GST Total", "gstTotal", true],
           ["IGST Total", "igstTotal", true],
           ["Freight", "freight", false],
+          ["Insurance Charges", "insuranceCharges", false],
+          ["Other Charges","otherCharges", false],
           ["Rounding", "rounding", true], // derived, read-only
           ["Grand Total", "grandTotal", true],
         ].map(([label, key, readOnly]) => (
