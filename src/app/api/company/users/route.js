@@ -1,38 +1,47 @@
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import CompanyUser from '@/models/CompanyUser';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import CompanyUser from "@/models/CompanyUser";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET;
 
 const VALID_ROLES = [
-  'Admin',
-  'Sales Manager',
-  'Purchase Manager',
-  'Inventory Manager',
-  'Accounts Manager',
-  'HR Manager',
-  'Support Executive',
-  'Production Head',
+  "Admin",
+  "Sales Manager",
+  "Purchase Manager",
+  "Inventory Manager",
+  "Accounts Manager",
+  "HR Manager",
+  "Support Executive",
+  "Production Head",
 ];
 
-/* ─── helper: verify JWT and ensure company type ─── */
-function verifyAuth(req) {
-  const auth = req.headers.get('authorization') || '';
-  const [, token] = auth.split(' ');
-  if (!token) throw new Error('Unauthorized');
+/* ───────── AUTH HELPERS ───────── */
 
-  const d = jwt.verify(token, SECRET);
-  return d; // { id, email, type: 'company' or 'admin' }
+function getToken(req) {
+  const auth = req.headers.get("authorization") || "";
+  return auth.split(" ")[1];
 }
 
-/* ───────── GET  /api/company/users ───────── */
+function requireAuth(req) {
+  const token = getToken(req);
+  if (!token) throw new Error("Unauthorized");
+  return jwt.verify(token, SECRET);
+}
+
+function requireCompany(req) {
+  const user = requireAuth(req);
+  if (user.type !== "company") throw new Error("Forbidden");
+  return user; // { id, companyId, email, roles, type }
+}
+
+/* ───────── GET /api/company/users ───────── */
 export async function GET(req) {
   try {
-    const user = verifyAuth(req);
+    const user = requireAuth(req);
 
-    const isAdmin = user.roles?.includes("Admin");  
+    const isAdmin = user.roles?.includes("Admin");
     const isCompany = user.type === "company";
 
     await dbConnect();
@@ -40,10 +49,12 @@ export async function GET(req) {
     let users;
 
     if (isAdmin) {
-      // ✅ Admin sees ALL users
-      users = await CompanyUser.find().select("-password").lean();
+      // ✅ Admin → all users
+      users = await CompanyUser.find()
+        .select("-password")
+        .lean();
     } else if (isCompany) {
-      // ✅ Company sees only their users
+      // ✅ Company → only its users
       users = await CompanyUser.find({ companyId: user.companyId })
         .select("-password")
         .lean();
@@ -51,44 +62,61 @@ export async function GET(req) {
       throw new Error("Forbidden");
     }
 
-    return NextResponse.json(users);
+    return NextResponse.json(users, { status: 200 });
 
   } catch (e) {
-    const status = /Unauthorized|Forbidden/.test(e.message) ? 401 : 500;
+    const status = e.message === "Unauthorized"
+      ? 401
+      : e.message === "Forbidden"
+      ? 403
+      : 500;
+
     return NextResponse.json({ message: e.message }, { status });
   }
 }
 
-
-
-/* ───────── POST  /api/company/users ───────── */
+/* ───────── POST /api/company/users ───────── */
 export async function POST(req) {
   try {
-    const company = verifyCompany(req);
+    const company = requireCompany(req);
     const { name, email, password, roles = [] } = await req.json();
 
-    if (!name || !email || !password)
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { message: 'name, email, password required' },
+        { message: "name, email, password required" },
         { status: 400 }
       );
+    }
 
     if (
       !Array.isArray(roles) ||
       roles.length === 0 ||
-      roles.some((r) => !VALID_ROLES.includes(r))
-    )
-      return NextResponse.json({ message: 'Invalid roles' }, { status: 400 });
+      roles.some(r => !VALID_ROLES.includes(r))
+    ) {
+      return NextResponse.json(
+        { message: "Invalid roles" },
+        { status: 400 }
+      );
+    }
 
     await dbConnect();
 
-    const dup = await CompanyUser.findOne({ companyId: company.id, email });
-    if (dup)
-      return NextResponse.json({ message: 'Email already exists' }, { status: 409 });
+    const exists = await CompanyUser.findOne({
+      companyId: company.companyId,
+      email,
+    });
+
+    if (exists) {
+      return NextResponse.json(
+        { message: "Email already exists" },
+        { status: 409 }
+      );
+    }
 
     const hash = await bcrypt.hash(password, 10);
+
     const user = await CompanyUser.create({
-      companyId: company.id,
+      companyId: company.companyId,
       name,
       email,
       password: hash,
@@ -96,18 +124,28 @@ export async function POST(req) {
     });
 
     return NextResponse.json(
-      { id: user._id, name: user.name, email: user.email, roles: user.roles },
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+      },
       { status: 201 }
     );
+
   } catch (e) {
-    const status = /Unauthorized|Forbidden/.test(e.message) ? 401 : 500;
+    const status = e.message === "Unauthorized"
+      ? 401
+      : e.message === "Forbidden"
+      ? 403
+      : 500;
+
     return NextResponse.json({ message: e.message }, { status });
   }
 }
 
 
 
-///07/2025
 // import { NextResponse } from 'next/server';
 // import dbConnect from '@/lib/db';
 // import CompanyUser from '@/models/CompanyUser';
@@ -127,49 +165,73 @@ export async function POST(req) {
 //   'Production Head',
 // ];
 
-// // ────────────── Auth helper ──────────────
-// function verifyCompany(req) {
+// /* ─── helper: verify JWT and ensure company type ─── */
+// function verifyAuth(req) {
 //   const auth = req.headers.get('authorization') || '';
 //   const [, token] = auth.split(' ');
 //   if (!token) throw new Error('Unauthorized');
-//   const decoded = jwt.verify(token, SECRET);
-//   if (decoded.type !== 'company') throw new Error('Forbidden');
-//   return decoded; // { id, email, type: 'company', ... }
+
+//   const d = jwt.verify(token, SECRET);
+//   return d; // { id, email, type: 'company' or 'admin' }
 // }
 
-// // ────────────── GET: List all users ──────────────
+// /* ───────── GET  /api/company/users ───────── */
 // export async function GET(req) {
 //   try {
-//     const company = verifyCompany(req);
-//     await dbConnect();
-//     const users = await CompanyUser.find({ companyId: company.id })
-//       .select('-password')
-//       .sort({ createdAt: -1 })
-//       .lean();
+//     const user = verifyAuth(req);
 
-//     return NextResponse.json(users, { status: 200 });
+//     const isAdmin = user.roles?.includes("Admin");  
+//     const isCompany = user.type === "company";
+
+//     await dbConnect();
+
+//     let users;
+
+//     if (isAdmin) {
+//       // ✅ Admin sees ALL users
+//       users = await CompanyUser.find().select("-password").lean();
+//     } else if (isCompany) {
+//       // ✅ Company sees only their users
+//       users = await CompanyUser.find({ companyId: user.companyId })
+//         .select("-password")
+//         .lean();
+//     } else {
+//       throw new Error("Forbidden");
+//     }
+
+//     return NextResponse.json(users);
+
 //   } catch (e) {
 //     const status = /Unauthorized|Forbidden/.test(e.message) ? 401 : 500;
 //     return NextResponse.json({ message: e.message }, { status });
 //   }
 // }
 
-// // ────────────── POST: Create a new user ──────────────
+
+
+// /* ───────── POST  /api/company/users ───────── */
 // export async function POST(req) {
 //   try {
 //     const company = verifyCompany(req);
 //     const { name, email, password, roles = [] } = await req.json();
 
 //     if (!name || !email || !password)
-//       return NextResponse.json({ message: 'name, email, password required' }, { status: 400 });
+//       return NextResponse.json(
+//         { message: 'name, email, password required' },
+//         { status: 400 }
+//       );
 
-//     if (!Array.isArray(roles) || roles.some((r) => !VALID_ROLES.includes(r)))
+//     if (
+//       !Array.isArray(roles) ||
+//       roles.length === 0 ||
+//       roles.some((r) => !VALID_ROLES.includes(r))
+//     )
 //       return NextResponse.json({ message: 'Invalid roles' }, { status: 400 });
 
 //     await dbConnect();
 
-//     const exists = await CompanyUser.findOne({ companyId: company.id, email });
-//     if (exists)
+//     const dup = await CompanyUser.findOne({ companyId: company.id, email });
+//     if (dup)
 //       return NextResponse.json({ message: 'Email already exists' }, { status: 409 });
 
 //     const hash = await bcrypt.hash(password, 10);
@@ -182,12 +244,7 @@ export async function POST(req) {
 //     });
 
 //     return NextResponse.json(
-//       {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         roles: user.roles,
-//       },
+//       { id: user._id, name: user.name, email: user.email, roles: user.roles },
 //       { status: 201 }
 //     );
 //   } catch (e) {
@@ -197,84 +254,3 @@ export async function POST(req) {
 // }
 
 
-
-// import { NextResponse } from 'next/server';
-// import dbConnect from '@/lib/db';
-// import CompanyUser from '@/models/CompanyUser';
-// import bcrypt from 'bcryptjs';
-// import jwt from 'jsonwebtoken';
-
-// const SECRET = process.env.JWT_SECRET;
-
-// const VALID_ROLES = [
-//   'Admin',
-//   'Sales Manager',
-//   'Purchase Manager',
-//   'Inventory Manager',
-//   'Accounts Manager',
-//   'HR Manager',
-//   'Support Executive',
-//   'Production Head',
-// ];
-
-// /* ─ helper: verify JWT and ensure it’s a company token ─ */
-// function verifyCompany(req) {
-//   const auth = req.headers.get('authorization') || '';
-//   const [, token] = auth.split(' ');
-//   if (!token) throw new Error('Unauthorized');
-//   const d = jwt.verify(token, SECRET);
-//   if (d.type !== 'company') throw new Error('Forbidden');
-//   return d; // { id, email, type:'company', ... }
-// }
-
-// /* ───────────── GET  /api/company/users ───────────── */
-// export async function GET(req) {
-//   try {
-//     const company = verifyCompany(req);
-//     await dbConnect();
-//     const users = await CompanyUser.find({ companyId: company.id })
-//                      .select('-password')
-//                      .sort({ createdAt: -1 })
-//                      .lean();
-//     return NextResponse.json(users, { status: 200 });
-//   } catch (e) {
-//     const status = /Unauthorized|Forbidden/.test(e.message) ? 401 : 500;
-//     return NextResponse.json({ message: e.message }, { status });
-//   }
-// }
-
-// /* ───────────── POST  /api/company/users ──────────── */
-// export async function POST(req) {
-//   try {
-//     const company = verifyCompany(req);
-//     const { name, email, password, role = 'Sales Manager' } = await req.json();
-
-//     if (!name || !email || !password)
-//       return NextResponse.json({ message: 'name, email, password required' }, { status: 400 });
-
-//     if (!VALID_ROLES.includes(role))
-//       return NextResponse.json({ message: 'Invalid role' }, { status: 400 });
-
-//     await dbConnect();
-//     const dup = await CompanyUser.findOne({ companyId: company.id, email });
-//     if (dup)
-//       return NextResponse.json({ message: 'Email already exists' }, { status: 409 });
-
-//     const hash = await bcrypt.hash(password, 10);
-//     const user = await CompanyUser.create({
-//       companyId: company.id,
-//       name,
-//       email,
-//       password: hash,
-//       role,
-//     });
-
-//     return NextResponse.json(
-//       { id: user._id, name: user.name, email: user.email, role: user.role },
-//       { status: 201 }
-//     );
-//   } catch (e) {
-//     const status = /Unauthorized|Forbidden/.test(e.message) ? 401 : 500;
-//     return NextResponse.json({ message: e.message }, { status });
-//   }
-// }
