@@ -94,7 +94,7 @@ export default function Sidebar({ children }) {
   };
   if (has('admin')) Object.keys(v).forEach((k) => (v[k] = true));
 
-  const PREFIX = has('admin') ? '/admin' : '/users';
+  const PREFIX = has('admin') ? '/users' : '/users';
   const P = (p) => `${PREFIX}${p}`;
   const toggleMenu = (k) =>
     setOpen((o) => ({ ...o, menu: o.menu === k ? null : k, sub: null }));
@@ -328,6 +328,14 @@ export default function Sidebar({ children }) {
                             label="Report"
                             close={closeDrawer}
                           />
+                            
+                                            <Item href={P('/sales-report/avg-product-rate')} icon={<HiChartSquareBar />} label="avg-product-rate"    close={closeDrawer} />
+                                            <Item href={P('/sales-report/avg-product-zone')} icon={<HiChartSquareBar />} label="avg-product-zone"    close={closeDrawer} />
+                                            <Item href={P('/sales-report/orders-summary')} icon={<HiChartSquareBar />} label="orders-summary"    close={closeDrawer} />
+                                            <Item href={P('/sales-report/pending-dispatch')} icon={<HiChartSquareBar />} label="pending-dispatch"    close={closeDrawer} />
+                                            <Item href={P('/sales-report/projection-vs-actual')} icon={<HiChartSquareBar />} label="projection-vs-actual"    close={closeDrawer} />
+                                            {/* <Item href={P('/sales-report/sales-return-report')} icon={<HiChartSquareBar />} label="sales-return-report"    close={closeDrawer} /> */}
+                                            <Item href={P('/sales-report/orders-summary')} icon={<HiChartSquareBar />} label="orders-summary"    close={closeDrawer} />
                         </div>
                       )}
                     </div>
@@ -388,6 +396,29 @@ export default function Sidebar({ children }) {
               )}
             </div>
           )}
+
+          {/* projection master */}
+          {v.tsales && (
+            <div>
+              <MenuBtn
+                isOpen={open.menu === 'projection'}
+                onToggle={() => toggleMenu('projection')}
+                icon={<HiUsers />}
+                label="Projection Master"
+              />
+              {open.menu === 'projection' && (
+                <div className="ml-6 mt-2 space-y-1">
+                  <Item
+                    href={P('/projection')}
+                    icon={<HiUserGroup />}
+                    label="Projection"
+                    close={closeDrawer}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
 
           {/* users */}
           {v.users && (
