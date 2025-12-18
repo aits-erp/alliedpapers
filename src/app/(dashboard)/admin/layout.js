@@ -143,6 +143,7 @@ export default function AdminSidebar({ children }) {
                   <Item href="/admin/sales-report/avg-product-zone" icon={<HiChartSquareBar />} label="avg-product-zone" close={closeSidebar} />
                   <Item href="/admin/sales-report/orders-summary" icon={<HiChartSquareBar />} label="orders-summary" close={closeSidebar} />
                   <Item href="/admin/sales-report/pending-dispatch" icon={<HiChartSquareBar />} label="pending-dispatch" close={closeSidebar} />
+                 
                   {/* <Item href="/admin/sales-report/sales-return-report" icon={<HiChartSquareBar />} label="sales-return-report" close={closeSidebar} /> */}
                   <Item href="/admin/sales-report/orders-summary" icon={<HiChartSquareBar />} label="sales-summary" close={closeSidebar} />
                   
@@ -167,6 +168,11 @@ export default function AdminSidebar({ children }) {
               </div>
             )}
           </div>
+          {/* projection */}
+          <Section title="Projection" icon={<HiChartSquareBar />} isOpen={openMenu === 'projection'} onToggle={() => toggleMenu('projection')}>
+            <Item href="/admin/projection" icon={<HiChartSquareBar />} label="Projection" close={closeSidebar} />
+             <Item href="/admin/sales-report/projection-vs-actual" icon={<HiChartSquareBar />} label="projection-vs-actual" close={closeSidebar} />
+          </Section>
 
           {/* CRM --------------------------------------------------------- */}
           <Section title="CRM" icon={<SiCivicrm />} isOpen={openMenu === 'CRM'} onToggle={() => toggleMenu('CRM')}>
