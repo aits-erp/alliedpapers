@@ -148,7 +148,7 @@ export default function ProjectionVsActualPage() {
                   <th className="px-6 py-4">Item Details</th>
                   <th className="px-6 py-4 text-center">Projection (Qty)</th>
                   <th className="px-6 py-4 text-center">Actual (Qty)</th>
-                  <th className="px-6 py-4 text-center">Variance</th>
+                  <th className="px-6 py-4 text-center">DIFFERENCE</th>
                   <th className="px-6 py-4 text-center">Performance</th>
                 </tr>
               </thead>

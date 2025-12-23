@@ -281,7 +281,8 @@ export default function ProjectionVsActualPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Summary label="Items" value={summary.totalItems} />
         <Summary label="Projected Qty" value={summary.totalProjected} />
-        <Summary label="Actual Qty" value={summary.totalActual} />
+        {/* two decimal places */}
+        <Summary label="Actual Qty"  value={Number(summary.totalActual || 0).toFixed(2)} />
       </div>
 
       {/* TABLE */}
@@ -298,7 +299,7 @@ export default function ProjectionVsActualPage() {
                 <th className="p-4 text-left">Item</th>
                 <th className="p-4 text-center">Projection</th>
                 <th className="p-4 text-center">Actual</th>
-                <th className="p-4 text-center">Variance</th>
+                <th className="p-4 text-center">DIFFERENCE</th>
               </tr>
             </thead>
             <tbody>
