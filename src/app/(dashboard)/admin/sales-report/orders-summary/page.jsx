@@ -64,7 +64,7 @@ export default function OrdersSummaryPage() {
         "Order Number": o.salesNumber,
         "Customer Name": o.customerName,
         "Order Amount": o.grandTotal,
-        Status: o.status,
+       
         "Sales Stage": o.statusStages,
       }))
     );
@@ -100,7 +100,7 @@ export default function OrdersSummaryPage() {
         "Order Number",
         "Customer Name",
         "Order Amount",
-        "Status",
+       
         "Sales Stage",
       ]],
       body: tableData,
@@ -197,7 +197,7 @@ export default function OrdersSummaryPage() {
                 <th className="border p-2">Order Number</th>
                 <th className="border p-2">Customer Name</th>
                 <th className="border p-2">Order Amount</th>
-                <th className="border p-2">Status</th>
+                {/* <th className="border p-2">Status</th> */}
                 <th className="border p-2">Sales Stage</th>
               </tr>
             </thead>
@@ -232,7 +232,7 @@ export default function OrdersSummaryPage() {
                   </td>
 
                   {/* ✅ STATUS LIKE YOUR STYLE */}
-                  <td className="border p-2">
+                  {/* <td className="border p-2">
                     <span
                       className={`px-3 py-1 text-xs font-semibold rounded-full
                         ${
@@ -247,7 +247,7 @@ export default function OrdersSummaryPage() {
                     >
                       {o.status}
                     </span>
-                  </td>
+                  </td> */}
 
                   {/* ✅ SALES STAGE LIKE YOUR STYLE */}
                   <td className="border p-2">

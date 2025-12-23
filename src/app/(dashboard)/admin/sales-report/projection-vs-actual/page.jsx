@@ -57,13 +57,19 @@ export default function ProjectionVsActualPage() {
   }, [year, month]);
 
   // Client-side filtering
-  const filteredData = report.filter(row => {
-    const matchesSearch = 
-      row.itemCode.toLowerCase().includes(search.toLowerCase()) || 
-      row.itemName.toLowerCase().includes(search.toLowerCase());
-    const matchesZone = zoneFilter === "All" || row.zone === zoneFilter;
-    return matchesSearch && matchesZone;
-  });
+ const filteredData = report.filter(row => {
+  // ✅ ONLY rows with projection
+  const hasProjection = Number(row.projectedQty) >= 1;
+
+  const matchesSearch =
+    row.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
+    row.itemName?.toLowerCase().includes(search.toLowerCase());
+
+  const matchesZone = zoneFilter === "All" || row.zone === zoneFilter;
+
+  return hasProjection && matchesSearch && matchesZone;
+});
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-800">
@@ -73,11 +79,15 @@ export default function ProjectionVsActualPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <BarChart2 className="text-blue-600" />
-            Target vs Actual Report
+            Projection vs Actual Report
           </h1>
+          <h2 className="text-xs text-blue-500 mt-1">
+  Showing only items with projection entered.
+</h2>
           <p className="text-gray-500 text-sm mt-1">
             Compare planned projections against actual sales by Item & Zone.
           </p>
+          
         </div>
         
         {/* Date Filters */}
@@ -136,7 +146,7 @@ export default function ProjectionVsActualPage() {
                 <tr>
                   <th className="px-6 py-4">Zone</th>
                   <th className="px-6 py-4">Item Details</th>
-                  <th className="px-6 py-4 text-center">Target (Qty)</th>
+                  <th className="px-6 py-4 text-center">Projection (Qty)</th>
                   <th className="px-6 py-4 text-center">Actual (Qty)</th>
                   <th className="px-6 py-4 text-center">Variance</th>
                   <th className="px-6 py-4 text-center">Performance</th>

@@ -71,6 +71,17 @@ export default function AvgProductZoneRatePage() {
     });
   }, [data, productFilter, zoneFilter]);
 
+  const productOptions = useMemo(() => {
+  if (!data?.records) return [];
+  return [...new Set(data.records.map(r => r.itemName).filter(Boolean))];
+}, [data]);
+
+const zoneOptions = useMemo(() => {
+  if (!data?.records) return [];
+  return [...new Set(data.records.map(r => r.zone).filter(Boolean))];
+}, [data]);
+
+
   /* ✅ EXPORT TO EXCEL */
   const exportToExcel = () => {
     if (!filteredRecords.length) {
@@ -185,32 +196,74 @@ export default function AvgProductZoneRatePage() {
             onChange={(e) => setTo(e.target.value)}
           />
         </div>
+{/* PRODUCT */}
+<div className="relative">
+  <label className="text-sm font-semibold">Product Name</label>
 
-        <div>
-          <label className="text-sm font-semibold">Product Name</label>
-          <input
-            type="text"
-            placeholder="Search product..."
-            className="w-full border px-3 py-2 rounded"
-            value={productFilter}
-            onChange={(e) => setProductFilter(e.target.value)}
-          />
-        </div>
+  <input
+    type="text"
+    list="product-list"
+    placeholder="Search / Select product..."
+    className="w-full border px-3 py-2 rounded pr-10"
+    value={productFilter}
+    onChange={(e) => setProductFilter(e.target.value)}
+  />
 
-        <div>
-          <label className="text-sm font-semibold">Zone</label>
-          <input
-            type="text"
-            placeholder="Search zone..."
-            className="w-full border px-3 py-2 rounded"
-            value={zoneFilter}
-            onChange={(e) => setZoneFilter(e.target.value)}
-          />
-        </div>
+  {productFilter && (
+    <button
+      type="button"
+      onClick={() => setProductFilter("")}
+      className="absolute right-2 top-8 text-gray-400 hover:text-gray-700"
+      title="Clear product"
+    >
+      ✕
+    </button>
+  )}
+
+  <datalist id="product-list">
+    {productOptions.map((p, i) => (
+      <option key={i} value={p} />
+    ))}
+  </datalist>
+</div>
+
+{/* ZONE */}
+<div className="relative">
+  <label className="text-sm font-semibold">Zone</label>
+
+  <input
+    type="text"
+    list="zone-list"
+    placeholder="Search / Select zone..."
+    className="w-full border px-3 py-2 rounded pr-10"
+    value={zoneFilter}
+    onChange={(e) => setZoneFilter(e.target.value)}
+  />
+
+  {zoneFilter && (
+    <button
+      type="button"
+      onClick={() => setZoneFilter("")}
+      className="absolute right-2 top-8 text-gray-400 hover:text-gray-700"
+      title="Clear zone"
+    >
+      ✕
+    </button>
+  )}
+
+  <datalist id="zone-list">
+    {zoneOptions.map((z, i) => (
+      <option key={i} value={z} />
+    ))}
+  </datalist>
+</div>
+
 
         <div className="flex items-end">
           <button
-            onClick={() => loadReport()}
+            onClick={() => loadReport()
+              
+            }
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
           >
             Apply Filter
@@ -258,11 +311,17 @@ export default function AvgProductZoneRatePage() {
               <tr key={i} className="hover:bg-gray-50">
                 <td className="border p-2 font-semibold">{r.zone}</td>
                 <td className="border p-2">{r.itemName}</td>
-                <td className="border p-2">{r.totalQty}</td>
-                <td className="border p-2">₹ {r.totalNetAmount}</td>
-                <td className="border p-2 font-semibold text-blue-600">
-                  ₹ {r.averageRate}
-                </td>
+              <td className="border p-2 text-right">
+  {Number(r.totalQty).toFixed(2)}
+</td>
+
+<td className="border p-2 text-right">
+  ₹ {Number(r.totalNetAmount).toFixed(2)}
+</td>
+
+<td className="border p-2 text-right font-semibold text-blue-600">
+  ₹ {Number(r.averageRate).toFixed(2)}
+</td>
               </tr>
             ))}
           </tbody>

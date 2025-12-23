@@ -132,6 +132,8 @@ function Overview() {
       const records = avgRes?.records ?? [];
       const salesRows = (salesRes?.data?.salesRows) ?? [];
 
+      console.log("Overview data:", { records, salesRows, salesRes });
+
       const map = {};
       salesRows.forEach(r => {
         const zone = String(r.zone || "Unspecified");
@@ -149,7 +151,7 @@ function Overview() {
         });
       }
 
-      const agg = Object.values(map).sort((a,b) => b.totalNet - a.totalNet).slice(0,8);
+      const agg = Object.values(map).sort((a,b) => b.totalQty - a.totalQty).slice(0,8);
       setZoneAgg(agg);
 
       setKpis({
@@ -177,7 +179,7 @@ function Overview() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <CardShell>
-          <h3 className="font-semibold mb-3">Top Zones by Amount</h3>
+          <h3 className="font-semibold mb-3">Top Zones by Qty.</h3>
           <div style={{ width: "100%", height: 240 }}>
             <ResponsiveContainer>
               <BarChart data={zoneAgg}>
@@ -185,7 +187,7 @@ function Overview() {
                 <XAxis dataKey="zone" tick={{ fontSize: 12 }} />
                 <YAxis />
                 <Tooltip formatter={(v)=>`₹ ${Number(v).toFixed(2)}`} />
-                <Bar dataKey="totalNet" fill="#06b6d4" onClick={(d) => {
+                <Bar dataKey="totalQty" fill="#06b6d4" onClick={(d) => {
                   window.dispatchEvent(new CustomEvent("reports.filter", { detail: { zone: d.zone } }));
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }} />
@@ -232,17 +234,36 @@ function StagePieMini({ companyId }) {
   return (
     <div style={{ width: "100%", height: 220 }}>
       <ResponsiveContainer>
-        <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" outerRadius={70} innerRadius={38} onClick={(d) => {
-            window.dispatchEvent(new CustomEvent("reports.filter", { detail: { stage: d.name } }));
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}>
-            {data.map((entry, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-          </Pie>
-          <Legend verticalAlign="bottom" height={36} />
-          <Tooltip formatter={(v)=>v} />
-        </PieChart>
-      </ResponsiveContainer>
+  <PieChart>
+    <Pie
+      data={data}
+      dataKey="value"
+      nameKey="name"
+      outerRadius={70}
+      innerRadius={38}
+      labelLine={false}                 // ❌ line hata de
+      label={({ value }) => value}      // ✅ hamesha value dikhegi
+      onClick={(d) => {
+        window.dispatchEvent(
+          new CustomEvent("reports.filter", {
+            detail: { stage: d.name },
+          })
+        );
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }}
+    >
+      {data.map((entry, i) => (
+        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+      ))}
+    </Pie>
+
+    <Legend verticalAlign="bottom" height={36} />
+
+    {/* Tooltip optional hai – remove bhi kar sakte ho */}
+    <Tooltip formatter={(v) => v} />
+  </PieChart>
+</ResponsiveContainer>
+
       <p className="text-xs text-slate-500 mt-2">Click a slice to filter sales by stage.</p>
     </div>
   );

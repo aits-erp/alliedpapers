@@ -61,6 +61,17 @@ export default function AvgProductRatePage() {
         .includes(productFilter.trim().toLowerCase())
     );
   }, [data, productFilter]);
+const productOptions = useMemo(() => {
+  if (!data?.products) return [];
+  return [
+    ...new Set(
+      data.products
+        .map((p) => p.itemName)
+        .filter(Boolean)
+    ),
+  ];
+}, [data]);
+
 
   /* ✅ EXPORT TO EXCEL */
   const exportToExcel = () => {
@@ -166,16 +177,38 @@ export default function AvgProductRatePage() {
           />
         </div>
 
-        <div>
-          <label className="text-sm font-semibold">Product Name</label>
-          <input
-            type="text"
-            placeholder="Search product..."
-            className="w-full border px-3 py-2 rounded"
-            value={productFilter}
-            onChange={(e) => setProductFilter(e.target.value)}
-          />
-        </div>
+     <div className="relative">
+  <label className="text-sm font-semibold">Product Name</label>
+
+  <input
+    type="text"
+    list="product-list"
+    placeholder="Search / Select product..."
+    className="w-full border px-3 py-2 rounded pr-10"
+    value={productFilter}
+    onChange={(e) => setProductFilter(e.target.value)}
+  />
+
+  {/* Clear Button */}
+  {productFilter && (
+    <button
+      type="button"
+      onClick={() => setProductFilter("")}
+      className="absolute right-2 top-8 text-gray-400 hover:text-gray-700"
+      title="Clear"
+    >
+      ✕
+    </button>
+  )}
+
+  <datalist id="product-list">
+    {productOptions.map((p, i) => (
+      <option key={i} value={p} />
+    ))}
+  </datalist>
+</div>
+
+
 
         <div className="flex items-end">
           <button
@@ -250,11 +283,19 @@ export default function AvgProductRatePage() {
             {filteredProducts.map((p, i) => (
               <tr key={i} className="hover:bg-gray-50">
                 <td className="border p-2 font-semibold">{p.itemName}</td>
-                <td className="border p-2">{p.totalQty}</td>
-                <td className="border p-2">₹ {p.totalNetAmount}</td>
-                <td className="border p-2 font-semibold text-blue-600">
-                  ₹ {p.averageRate}
-                </td>
+                
+              <td className="border p-2 text-right">
+  {Number(p.totalQty).toFixed(2)}
+</td>
+
+<td className="border p-2 text-right">
+  ₹ {Number(p.totalNetAmount).toFixed(2)}
+</td>
+
+<td className="border p-2 text-right font-semibold text-blue-600">
+  ₹ {Number(p.averageRate).toFixed(2)}
+</td>
+
               </tr>
             ))}
           </tbody>

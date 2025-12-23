@@ -815,7 +815,7 @@ const handleChange = (e) => {
             <option>ETD notification for SC-cremika</option>
             <option>SC to concerned sales & customer</option>
             <option>Material in QC-OK/NOK</option>
-            <option>Dispatch with qty</option>
+            <option>Dispatched</option>
             <option>Delivered to customer</option>
           </select>
         </div>

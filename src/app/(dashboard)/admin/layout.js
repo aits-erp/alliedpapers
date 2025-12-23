@@ -172,6 +172,7 @@ export default function AdminSidebar({ children }) {
           <Section title="Projection" icon={<HiChartSquareBar />} isOpen={openMenu === 'projection'} onToggle={() => toggleMenu('projection')}>
             <Item href="/admin/projection" icon={<HiChartSquareBar />} label="Projection" close={closeSidebar} />
              <Item href="/admin/sales-report/projection-vs-actual" icon={<HiChartSquareBar />} label="projection-vs-actual" close={closeSidebar} />
+             <Item href="/admin/sales-report/Without-Projection-Outside-Zone" icon={<HiChartSquareBar />} label="Without-Projection-Outside-Zone" close={closeSidebar} />
           </Section>
 
           {/* CRM --------------------------------------------------------- */}
