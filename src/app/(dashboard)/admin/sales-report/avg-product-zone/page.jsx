@@ -276,6 +276,7 @@ const zoneOptions = useMemo(() => {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
           <SummaryCard label="Zones" value={totalZones} />
           <SummaryCard label="Products" value={totalProducts} />
+          <SummaryCard label="Total Qty" value={sumQty.toFixed(2)} />
           <SummaryCard label="Net Amount" value={`₹ ${sumNet.toFixed(2)}`} />
           <SummaryCard label="Avg Rate" value={`₹ ${avgRate}`} />
         </div>

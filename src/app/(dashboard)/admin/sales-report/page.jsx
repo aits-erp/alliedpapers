@@ -186,7 +186,7 @@ function Overview() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="zone" tick={{ fontSize: 12 }} />
                 <YAxis />
-                <Tooltip formatter={(v)=>`₹ ${Number(v).toFixed(2)}`} />
+                <Tooltip formatter={(v)=>` ${Number(v).toFixed(2)}`} />
                 <Bar dataKey="totalQty" fill="#06b6d4" onClick={(d) => {
                   window.dispatchEvent(new CustomEvent("reports.filter", { detail: { zone: d.zone } }));
                   window.scrollTo({ top: 0, behavior: "smooth" });
