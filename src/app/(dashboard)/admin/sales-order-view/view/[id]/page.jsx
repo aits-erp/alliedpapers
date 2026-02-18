@@ -1,0 +1,794 @@
+'use client';
+
+import Link from 'next/link';
+import axios from 'axios';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+export default function InvoiceDetail() {
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`/api/sales-order/${id}`);
+        if (res.data?.data) {
+          setOrder(res.data.data);
+        } else {
+          setError('Order not found');
+        }
+      } catch (error) {
+        console.error('Failed to fetch sales-order:', error);
+        setError('Failed to fetch sales-order');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchOrder();
+  }, [id]);
+
+
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(value || 0);
+
+  const formatDate = (dateString) =>
+    dateString ? new Date(dateString).toLocaleDateString() : '-';
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <p className="text-red-600 text-xl">{error}</p>
+      </div>
+    );
+  }
+
+  if (!order) return <p>Order not found</p>;
+
+  return (
+    <div className="container mx-auto p-6">
+      <Link href="/admin/sales-order-view">
+        <button className="mb-4 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded transition">
+          ← Back to Order List
+        </button>
+      </Link>
+
+      <h1 className="text-3xl font-bold mb-6">Sales Order Details</h1>
+
+      {/* CUSTOMER + ORDER INFO */}
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
+            <div className="space-y-2">
+              <p><strong>Customer Code:</strong> {order.customerCode}</p>
+              <p><strong>Customer Name:</strong> {order.customerName}</p>
+              {/* <p><strong>Contact Person:</strong> {order.contactPerson}</p> */}
+              {/* <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p> */}
+            </div>
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Order Information</h2>
+            <div className="space-y-2">
+              <p><strong>Order Number:</strong> {order.salesNumber}</p>
+              <p><strong>Order Date:</strong> {formatDate(order.orderDate)}</p>
+              <p><strong>Expected Delivery:</strong> {formatDate(order.expectedDeliveryDate)}</p>
+              <p>
+                <strong> Sales Stages:</strong>
+                <span className={`ml-2 px-2 py-1 rounded text-sm ${
+                  order.statusStages === "Delivered to customer"
+                    ? "bg-green-200 text-green-800"
+                    : "bg-yellow-200 text-yellow-800"
+                }`}>
+                  {order.statusStages}
+                </span>
+              </p>
+              {/* <p><strong>From Quote:</strong> {order.fromQuote ? 'Yes' : 'No'}</p> */}
+            </div>
+          </div>
+        </div>
+
+        {/* ADDRESSES */}
+        {(order.billingAddress || order.shippingAddress) && (
+          <div className="mt-6 pt-4 border-t">
+            <h2 className="text-xl font-semibold mb-4">Address Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {order.billingAddress && (
+                <div>
+                  <h3 className="font-medium mb-2 text-blue-600">Billing Address</h3>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    {order.billingAddress.address1 && <p>{order.billingAddress.address1}</p>}
+                    {order.billingAddress.address2 && <p>{order.billingAddress.address2}</p>}
+                    <p>
+                      {[order.billingAddress.city, order.billingAddress.state, order.billingAddress.zip].filter(Boolean).join(', ')}
+                    </p>
+                    {order.billingAddress.country && <p>{order.billingAddress.country}</p>}
+                  </div>
+                </div>
+              )}
+              {order.shippingAddress && (
+                <div>
+                  <h3 className="font-medium mb-2 text-green-600">Shipping Address</h3>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    {order.shippingAddress.address1 && <p>{order.shippingAddress.address1}</p>}
+                    {order.shippingAddress.address2 && <p>{order.shippingAddress.address2}</p>}
+                    <p>
+                      {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.zip].filter(Boolean).join(', ')}
+                    </p>
+                    {order.shippingAddress.country && <p>{order.shippingAddress.country}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* FINANCIAL SUMMARY */}
+        <div className="mt-4 pt-4 border-t">
+          <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p><strong>Total Before Discount:</strong> {formatCurrency(order.totalBeforeDiscount)}</p>
+              <p><strong>Freight:</strong> {formatCurrency(order.freight)}</p>
+              <p><strong>Rounding:</strong> {formatCurrency(order.rounding)}</p>
+            </div>
+            <div className="space-y-1">
+              <p><strong>Total Down Payment:</strong> {formatCurrency(order.totalDownPayment)}</p>
+              <p><strong>Applied Amounts:</strong> {formatCurrency(order.appliedAmounts)}</p>
+              <p><strong>Open Balance:</strong> {formatCurrency(order.openBalance)}</p>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-xl font-bold">
+              <strong>Grand Total:</strong> {formatCurrency(order.grandTotal)}
+            </p>
+          </div>
+        </div>
+
+        {/* REMARKS */}
+        {order.remarks && (
+          <div className="mt-6 pt-4 border-t">
+            <h2 className="text-xl font-semibold mb-2">Remarks</h2>
+            <p className="text-gray-700">{order.remarks}</p>
+          </div>
+        )}
+      </div>
+
+      {/* ORDER ITEMS */}
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 className="text-2xl font-semibold mb-4">Order Items</h2>
+        {order.items?.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border p-2 text-left">Item Code</th>
+                  <th className="border p-2 text-left">Item Name</th>
+                  <th className="border p-2 text-left">Description</th>
+                  <th className='border p-2 text-left'>Size</th>
+                  <th className='border p-2 text-left'>Length</th>
+                  <th className='border p-2 text-left'>No. of Rolls</th>
+                  <th className="border p-2 text-center">Qty</th>
+                  <th className="border p-2 text-center">Unit Price</th>
+                  <th className="border p-2 text-center">Discount</th>
+                  <th className="border p-2 text-center">Tax</th>
+                  <th className="border p-2 text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="border p-2">{item.itemCode}</td>
+                    <td className="border p-2">{item.itemName}</td>
+                    <td className="border p-2">{item.itemDescription}</td>
+                    <td className='border p-2'>{item.size} </td>
+                    <td className='border p-2'>{item.length} </td>
+                    <td className='border p-2'>{item.noOfRolls} </td>
+                    <td className="border p-2 text-center">
+                      <div className="flex flex-col">
+                        <span>{item.quantity}</span>
+                        {item.allowedQuantity > 0 && (
+                          <span className="text-sm text-green-600">Allowed: {item.allowedQuantity}</span>
+                        )}
+                        {item.receivedQuantity > 0 && (
+                          <span className="text-sm text-blue-600">Received: {item.receivedQuantity}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="border p-2 text-right">{formatCurrency(item.unitPrice)}</td>
+                    <td className="border p-2 text-right">{formatCurrency(item.discount)}</td>
+                    <td className="border p-2 text-center">
+                   <div className="flex flex-col">
+  {item.taxOption === "GST" ? (
+    <>
+      <span>CGST: {item.gstRate / 2}%</span>
+      <span className="text-xs">{formatCurrency(item.cgstAmount)}</span>
+      <span>SGST: {item.gstRate / 2}%</span>
+      <span className="text-xs">{formatCurrency(item.sgstAmount)}</span>
+    </>
+  ) : (
+    <>
+      <span>IGST: {item.igstRate}%</span>
+      <span className="text-xs">{formatCurrency(item.igstAmount)}</span>
+    </>
+  )}
+</div>
+
+                    </td>
+                    <td className="border p-2 text-right font-medium">{formatCurrency(item.totalAmount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-center text-gray-500 py-4">No items available.</p>
+        )}
+      </div>
+
+ {/* ATTACHMENTS */}
+{/* ATTACHMENTS */}
+<div className="bg-white shadow-md rounded-lg p-6 mb-6">
+  <h2 className="text-2xl font-semibold mb-4">Attachments</h2>
+
+  {order?.attachments?.length > 0 ? (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {order.attachments.map((f, i) => {
+        const rawUrl = f?.fileUrl || f?.url || "";
+        if (!rawUrl) return null;
+
+        const url = rawUrl.startsWith("http")
+          ? rawUrl
+          : `${window.location.origin}${rawUrl}`;
+
+        const fileName = f.fileName || rawUrl.split("/").pop() || "file";
+
+        const isImage = f.fileType?.startsWith("image/");
+        const isPDF =
+          f.fileType === "application/pdf" ||
+          fileName.toLowerCase().endsWith(".pdf");
+
+        const displayDate = f.uploadedAt
+          ? new Date(f.uploadedAt).toLocaleDateString()
+          : "";
+
+        return (
+          <div
+            key={i}
+            className="border rounded-lg p-3 flex flex-col items-center justify-between text-center bg-gray-50"
+          >
+            {isImage ? (
+              <img
+                src={url}
+                alt={fileName}
+                className="h-32 w-full object-contain rounded mb-2 bg-white cursor-pointer"
+                onClick={() => window.open(url, "_blank")}
+              />
+            ) : isPDF ? (
+              <div
+                className="h-32 w-full flex items-center justify-center bg-white rounded mb-2 cursor-pointer"
+                onClick={() => window.open(url, "_blank")}
+              >
+                <span className="text-red-500 text-3xl">📄</span>
+              </div>
+            ) : (
+              <div className="h-32 w-full flex items-center justify-center text-gray-500 text-sm bg-white rounded mb-2">
+                No preview
+              </div>
+            )}
+
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline truncate w-full"
+              title={fileName}
+            >
+              {fileName.length > 22 ? fileName.slice(0, 22) + "…" : fileName}
+            </a>
+
+            <p className="text-xs text-gray-400 mt-1">{displayDate}</p>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-gray-500">No attachments available.</p>
+  )}
+</div>
+
+
+
+      {/* ACTION BUTTONS */}
+      <div className="flex justify-end space-x-4">
+        <Link href="/admin/sales-order-view">
+          <button className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded transition">
+            Back to List
+          </button>
+        </Link>
+        <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
+          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
+            Edit Order
+          </button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+// 'use client';
+
+// import Link from 'next/link';
+// import axios from 'axios';
+// import { useParams } from 'next/navigation';
+// import { useEffect, useState } from 'react';
+
+// export default function InvoiceDetail() {
+//   const { id } = useParams();
+//   const [order, setOrder] = useState(null);
+//   const [error, setError] = useState(null);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const fetchOrder = async () => {
+//       try {
+//         setLoading(true);
+//         const res = await axios.get(`/api/sales-order/${id}`);
+//         if (res.data && res.data.data) {
+//           setOrder(res.data.data);
+//         } else {
+//           setError('Order not found');
+//         }
+//       } catch (error) {
+//         console.error('Failed to fetch sales-order:', error);
+//         setError('Failed to fetch sales-order');
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     if (id) {
+//       fetchOrder();
+//     }
+//   }, [id]);
+
+//   const formatCurrency = (value) => {
+//     return new Intl.NumberFormat('en-IN', {
+//       style: 'currency',
+//       currency: 'INR',
+//       minimumFractionDigits: 2
+//     }).format(value || 0);
+//   };
+
+//   const formatDate = (dateString) => {
+//     return dateString ? new Date(dateString).toLocaleDateString() : '-';
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center h-screen">
+//         <div className="text-xl">Loading...</div>
+//       </div>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <div className="container mx-auto p-6">
+//         <p className="text-red-600 text-xl">{error}</p>
+//       </div>
+//     );
+//   }
+
+//   if (!order) {
+//     return <p>Order not found</p>;
+//   }
+
+//   return (
+//     <div className="container mx-auto p-6">
+//       <Link href="/admin/sales-order-view">
+//         <button className="mb-4 px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded transition">
+//           ← Back to Order List
+//         </button>
+//       </Link>
+      
+//       <h1 className="text-3xl font-bold mb-6">Sales Order Details</h1>
+      
+//       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+//         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+//           <div>
+//             <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
+//             <div className="space-y-2">
+//               <p><strong>Customer Code:</strong> {order.customerCode}</p>
+//               <p><strong>Customer Name:</strong> {order.customerName}</p>
+//               <p><strong>Contact Person:</strong> {order.contactPerson}</p>
+//               <p><strong>Sales Employee:</strong> {order.salesEmployee || '-'}</p>
+//             </div>
+//           </div>
+          
+//           <div>
+//             <h2 className="text-xl font-semibold mb-4">Order Information</h2>
+//             <div className="space-y-2">
+//               <p><strong>Order Number:</strong> {order.refNumber}</p>
+//               <p><strong>Order Date:</strong> {formatDate(order.orderDate)}</p>
+//               <p><strong>Expected Delivery:</strong> {formatDate(order.expectedDeliveryDate)}</p>
+//               <p>
+//                 <strong>Status:</strong> 
+//                 <span className={`ml-2 px-2 py-1 rounded text-sm ${
+//                   order.status === "Confirmed" 
+//                     ? "bg-green-200 text-green-800" 
+//                     : "bg-yellow-200 text-yellow-800"
+//                 }`}>
+//                   {order.status}
+//                 </span>
+//               </p>
+//               <p><strong>From Quote:</strong> {order.fromQuote ? 'Yes' : 'No'}</p>
+//             </div>
+//           </div>
+//         </div>
+        
+//         {/* Address Information */}
+//         {(order.billingAddress || order.shippingAddress) && (
+//           <div className="mt-6 pt-4 border-t">
+//             <h2 className="text-xl font-semibold mb-4">Address Information</h2>
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               {/* Billing Address */}
+//               {order.billingAddress && (
+//                 <div>
+//                   <h3 className="font-medium mb-2 text-blue-600">Billing Address</h3>
+//                   <div className="bg-gray-50 p-3 rounded border">
+//                     {order.billingAddress.address1 && <p>{order.billingAddress.address1}</p>}
+//                     {order.billingAddress.address2 && <p>{order.billingAddress.address2}</p>}
+//                     <p>
+//                       {[order.billingAddress.city, order.billingAddress.state, order.billingAddress.zip]
+//                         .filter(Boolean).join(', ')}
+//                     </p>
+//                     {order.billingAddress.country && <p>{order.billingAddress.country}</p>}
+//                   </div>
+//                 </div>
+//               )}
+              
+//               {/* Shipping Address */}
+//               {order.shippingAddress && (
+//                 <div>
+//                   <h3 className="font-medium mb-2 text-green-600">Shipping Address</h3>
+//                   <div className="bg-gray-50 p-3 rounded border">
+//                     {order.shippingAddress.address1 && <p>{order.shippingAddress.address1}</p>}
+//                     {order.shippingAddress.address2 && <p>{order.shippingAddress.address2}</p>}
+//                     <p>
+//                       {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.zip]
+//                         .filter(Boolean).join(', ')}
+//                     </p>
+//                     {order.shippingAddress.country && <p>{order.shippingAddress.country}</p>}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         )}
+        
+//         <div className="mt-4 pt-4 border-t">
+//           <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//             <div className="space-y-1">
+//               <p><strong>Total Before Discount:</strong> {formatCurrency(order.totalBeforeDiscount)}</p>
+//               <p><strong>Freight:</strong> {formatCurrency(order.freight)}</p>
+//               <p><strong>Rounding:</strong> {formatCurrency(order.rounding)}</p>
+//             </div>
+//             <div className="space-y-1">
+//               <p><strong>Total Down Payment:</strong> {formatCurrency(order.totalDownPayment)}</p>
+//               <p><strong>Applied Amounts:</strong> {formatCurrency(order.appliedAmounts)}</p>
+//               <p><strong>Open Balance:</strong> {formatCurrency(order.openBalance)}</p>
+//             </div>
+//           </div>
+//           <div className="mt-4 pt-4 border-t">
+//             <p className="text-xl font-bold">
+//               <strong>Grand Total:</strong> {formatCurrency(order.grandTotal)}
+//             </p>
+//           </div>
+//         </div>
+        
+//         {order.remarks && (
+//           <div className="mt-6 pt-4 border-t">
+//             <h2 className="text-xl font-semibold mb-2">Remarks</h2>
+//             <p className="text-gray-700">{order.remarks}</p>
+//           </div>
+//         )}
+//       </div>
+
+//       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+//         <h2 className="text-2xl font-semibold mb-4">Order Items</h2>
+//         {order.items && order.items.length > 0 ? (
+//           <div className="overflow-x-auto">
+//             <table className="min-w-full border-collapse">
+//               <thead className="bg-gray-100">
+//                 <tr>
+//                   <th className="border p-2 text-left">Item Code</th>
+//                   <th className="border p-2 text-left">Item Name</th>
+//                   <th className="border p-2 text-left">Description</th>
+//                   {/* <th className="border p-2 text-left">Warehouse</th> */}
+//                   <th className="border p-2 text-center">Qty</th>
+//                   <th className="border p-2 text-center">Unit Price</th>
+//                   <th className="border p-2 text-center">Discount</th>
+//                   <th className="border p-2 text-center">Tax</th>
+//                   <th className="border p-2 text-center">Total</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {order.items.map((item, index) => (
+//                   <tr key={index} className="hover:bg-gray-50">
+//                     <td className="border p-2">{item.itemCode}</td>
+//                     <td className="border p-2">{item.itemName}</td>
+//                     <td className="border p-2">{item.itemDescription}</td>
+//                     {/* <td className="border p-2">
+//                       {item.warehouseCode} - {item.warehouseName}
+//                     </td> */}
+//                     <td className="border p-2 text-center">
+//                       <div className="flex flex-col">
+//                         <span>Ordered: {item.quantity}</span>
+//                         {item.allowedQuantity > 0 && (
+//                           <span className="text-sm text-green-600">
+//                             Allowed: {item.allowedQuantity}
+//                           </span>
+//                         )}
+//                         {item.receivedQuantity > 0 && (
+//                           <span className="text-sm text-blue-600">
+//                             Received: {item.receivedQuantity}
+//                           </span>
+//                         )}
+//                       </div>
+//                     </td>
+//                     <td className="border p-2 text-right">{formatCurrency(item.unitPrice)}</td>
+//                     <td className="border p-2 text-right">{formatCurrency(item.discount)}</td>
+//                     <td className="border p-2 text-center">
+//                       <div className="flex flex-col">
+//                         <span>{item.taxOption}: {item.gstRate}%</span>
+//                         <span className="text-xs">
+//                           {formatCurrency(item.gstAmount)}
+//                         </span>
+//                       </div>
+//                     </td>
+//                     <td className="border p-2 text-right font-medium">
+//                       {formatCurrency(item.totalAmount)}
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+//         ) : (
+//           <p className="text-center text-gray-500 py-4">No items available.</p>
+//         )}
+//       </div>
+
+//         {/* {order.attachments.map((attachment, index) => (
+//           <li key={index} className="flex items-center space-x-2">
+//             <a
+//               href={attachment.fileUrl}
+//               target="_blank"
+//               rel="noopener noreferrer"
+//               className="text-blue-600 hover:underline"
+//             >
+//               {attachment.fileName}
+//             </a>
+//             <span className="text-sm text-gray-500">({attachment.fileType})</span>
+//             <span className="text-xs text-gray-400">
+//               {new Date(attachment.uploadedAt).toLocaleDateString()}
+//             </span>
+//           </li>
+//         ))} */}
+//       {/* <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+//         <h2 className="text-2xl font-semibold mb-4">Attachments</h2>
+//         {order.attachments && order.attachments.length > 0 ? (
+//           <ul className="list-disc pl-6 space-y-2">
+
+//             {order.attachments?.length > 0 && (
+//   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+//     {order.attachments.map((f, i) => (
+//       <div key={i} className="border rounded p-2 text-center">
+//         {f.fileType?.startsWith("image/") ? (
+//           <img src={f.fileUrl} alt={f.fileName} className="h-64 w-full object-cover rounded" />
+//         ) : f.fileType === "application/pdf" ? (
+//           <object data={f.fileUrl} type="application/pdf" className="h-72 w-full rounded">
+//             <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+//               {f.fileName}
+//             </a>
+//           </object>
+//         ) : (
+//           <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 underline">
+//             {f.fileName}
+//           </a>
+//         )}
+//       </div>
+//     ))}
+//   </div>
+// )}
+
+//           </ul>
+//         ) : (
+//           <p className="text-gray-500">No attachments available.</p>
+//         )}
+//       </div> */}
+
+
+// <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+//   <h2 className="text-2xl font-semibold mb-4">Attachments</h2>
+
+//   {order.attachments && order.attachments.length > 0 ? (
+//     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+//       {order.attachments.map((f, i) => {
+//         const isImage = f.fileType?.startsWith("image/");
+//         const isPDF = f.fileType === "application/pdf";
+//         const displayDate = f.uploadedAt ? new Date(f.uploadedAt).toLocaleDateString() : "";
+
+//         return (
+//           <div
+//             key={i}
+//             className="border rounded-lg p-3 flex flex-col items-center justify-between text-center bg-gray-50"
+//           >
+//             {isImage ? (
+//               <img
+//                 src={f.fileUrl}
+//                 alt={f.fileName}
+//                 className="h-32 w-full object-contain rounded mb-2 bg-white"
+//               />
+//             ) : isPDF ? (
+//               <object
+//                 data={f.fileUrl}
+//                 type="application/pdf"
+//                 className="h-32 w-full rounded mb-2"
+//               >
+//                 <p className="text-sm text-red-600">PDF Preview Not Available</p>
+//               </object>
+//             ) : (
+//               <div className="h-32 w-full flex items-center justify-center text-gray-500 text-sm bg-white rounded mb-2">
+//                 No preview
+//               </div>
+//             )}
+
+//             <a
+//               href={f.fileUrl}
+//               target="_blank"
+//               rel="noopener noreferrer"
+//               className="text-sm text-blue-600 hover:underline truncate w-full"
+//               title={f.fileName}
+//             >
+//               {f.fileName}
+//             </a>
+
+//             <p className="text-xs text-gray-400 mt-1">{displayDate}</p>
+//           </div>
+//         );
+//       })}
+//     </div>
+//   ) : (
+//     <p className="text-gray-500">No attachments available.</p>
+//   )}
+// </div>
+
+
+
+//       <div className="flex justify-end space-x-4">
+//         <Link href="/admin/sales-order-view">
+//           <button className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded transition">
+//             Back to List
+//           </button>
+//         </Link>
+//         <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
+//           <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
+//             Edit Order
+//           </button>
+//         </Link>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+// 'use client';
+
+// import Link from 'next/link';
+// import axios from 'axios';
+// import { useParams } from 'next/navigation';
+// import { useEffect, useState } from 'react';
+
+// export default function InvoiceDetail() {
+//   const { id } = useParams();
+//   const [order, setOrder] = useState([]);
+//   const [error, setError] = useState(null);
+
+//   useEffect(() => {
+//     const fetchOrder = async () => {
+//       try {
+//         const res = await axios.get(`/api/sales-order/${id}`);
+//         console.log(res.data.data)
+//         setOrder(res.data.data);
+//       } catch (error) {
+//         console.error('Failed to fetch sales-order:', error);
+//         setError('Failed to fetch sales-order');
+//       }
+//     };
+
+//     if (id) {
+//         fetchOrder();
+//     }
+//   }, [id]);
+
+//   if (error) {
+//     return <p>{error}</p>;
+//   }
+
+//   if (!order) {
+//     return <p>Loading...</p>;
+//   }
+
+//   return (
+//     <div className="container mx-auto p-6">
+//       <Link href="/admin/sales-order-view">
+//         <button className="mb-4 px-4 py-2 bg-gray-300 rounded">Back to Order List</button>
+//       </Link>
+//       <h1 className="text-3xl font-bold mb-6">Order Detail</h1>
+//       <div className="bg-white shadow-md rounded p-6">
+//         <p><strong>order Number:</strong> {order.orderNumber}</p>
+//         <p><strong>Supplier Name:</strong> {order.supplierName}</p>
+//         <p><strong>order Date:</strong> {new Date(order.orderDate).toLocaleDateString()}</p>
+//         <p><strong>Status:</strong> {order.status}</p>
+//         <p><strong>Grand Total:</strong> {order.grandTotal}</p>
+//         <p><strong>Remarks:</strong> {order.remarks}</p>
+//         <h2 className="text-2xl font-semibold mt-6 mb-2">Items</h2>
+//         {order.items && order.items.length > 0 ? (
+//           <table className="min-w-full bg-white border border-gray-300">
+//             <thead className="bg-gray-100">
+//               <tr>
+//                 <th className="border p-2">Item Name</th>
+//                 <th className="border p-2">Quantity</th>
+//                 <th className="border p-2">Unit Price</th>
+//                 <th className="border p-2">Discount</th>
+//                 <th className="border p-2">Total Amount</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {order.items.map((item, index) => (
+//                 <tr key={index} className="text-center">
+//                   <td className="border p-2">{item.itemName}</td>
+//                   <td className="border p-2">{item.quantity}</td>
+//                   <td className="border p-2">{item.unitPrice}</td>
+//                   <td className="border p-2">{item.discount}</td>
+//                   <td className="border p-2">{item.totalAmount}</td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         ) : (
+//           <p>No items available.</p>
+//         )}
+//       </div>
+//       <div className="mt-4">
+//         <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
+//           <button className="px-4 py-2 bg-blue-600 text-white rounded">Edit order</button>
+//         </Link>
+//       </div>
+//     </div>
+//   );
+// }
